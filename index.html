@@ -188,6 +188,8 @@
         guardianNeededSymbols = function(shapes, inside, outside, challengeMode, challengeM) {
           mustSend = [];
           const outsideObject = shapes.find(item => item.name === outside);
+		  // console.log(challengeMode ? 'Challenge' : 'keine Challenge');
+		  // console.log(outsideObject);
 
 		  if (challengeMode !== true) {
 			  if (outsideObject.symbol1 === inside) {
@@ -204,6 +206,7 @@
 		  else {
 			  const wanted3D = challengeM.find(item => item.inside === inside);
 			  const w3d = shapes.find(item => item.name === wanted3D.outside);
+			  // console.log(w3d);
 
 			  if ((outsideObject.symbol1 !== w3d.symbol1) && (outsideObject.symbol1 !== w3d.symbol2)) {
 				mustSend.push(outsideObject.symbol1);
@@ -215,22 +218,23 @@
 
 		  }
 
-		  // console.log(retVal);
+		  // console.log('mustSend');
+		  // console.log(mustSend);
           return mustSend;
         };
 
         if(this.insideGuardianLeft) {
-          if(this.outsideGuardianLeft) {
+          if(outLeft) {
             retVal.left = guardianNeededSymbols(this.threeD, this.insideGuardianLeft, outLeft, this.isChallenge, this.challengeMapping);
           }
         }
         if(this.insideGuardianMiddle) {
-          if(this.outsideGuardianMiddle) {
+          if(outMiddle) {
             retVal.middle = guardianNeededSymbols(this.threeD, this.insideGuardianMiddle, outMiddle, this.isChallenge, this.challengeMapping);
           }
         }
         if(this.insideGuardianRight) {
-          if(this.outsideGuardianRight) {
+          if(outRight) {
             retVal.right = guardianNeededSymbols(this.threeD, this.insideGuardianRight, outRight, this.isChallenge, this.challengeMapping);
           }
         }
@@ -238,6 +242,7 @@
 		// console.log(retVal.left);
 		// console.log(retVal.middle);
 		// console.log(retVal.right);
+		// console.log(retVal);
         return retVal;
       },
       displayNeededSymbols: function(symbolText) {
@@ -382,6 +387,10 @@
       // This is garbage code but it works. Redo this to make it more elegant
       displayNeededSteps: function(outLeft, outMiddle, outRight) {
 	    neededSwaps = this.swapsNeeded(outLeft, outMiddle, outRight);
+		// console.log('neededSwaps');
+		// console.log(neededSwaps.left);
+		// console.log(neededSwaps.middle);
+		// console.log(neededSwaps.right);
 		zaehl = 0;
 		
         if(neededSwaps.left && neededSwaps.middle && neededSwaps.right) {
@@ -390,30 +399,48 @@
             while (neededSwaps.left.length > 0 || neededSwaps.middle.length > 0 || neededSwaps.right.length > 0) {
 				zaehl++;
 				
-				if (zaehl == 20) {
+				if (zaehl == 6) {
 					break;
 					}
 					
                 if (neededSwaps.left.length) {
-                    toSwap = neededSwaps.left.pop();
+                    toSwap = neededSwaps.left.shift();
                     // knowing a shape to get away from a guardian, if anyone needs two swaps, this definitely has to go there.
                     // otherwise, if there are no aisles needing two swaps, either:
                     // * we have the two swaps and can trade with anywhere
                     // * there is only one other shape out of place, and we should swap with it
                     if (neededSwaps.middle.length == 2) {
-                        toFind = neededSwaps.middle.pop();
+                        toFind = neededSwaps.middle.shift();
+
+						if (toSwap === toFind) {
+							neededSwaps.middle.push(toFind);
+							toFind = neededSwaps.middle.shift();
+						}
+
                         steps.push([toSwap, 'left', toFind, 'middle']);
                         outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
                         outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 2) {
-                        toFind = neededSwaps.right.pop();
+                        toFind = neededSwaps.right.shift();
+
+						if (toSwap === toFind) {
+							neededSwaps.right.push(toFind);
+							toFind = neededSwaps.right.shift();
+						}
+
                         steps.push([toSwap, 'left', toFind, 'right']);
                         outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
                         outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else if (neededSwaps.middle.length == 1) {
                         // it's possible that we're handling 'all outside aisles must swap one' e.g. SCT/Cylinder+Cone+Prism
                         // we've popped left, pop middle and see if right needs one swap. if so, we'll actually need to swap the retrieved symbol again.
-                        toFind = neededSwaps.middle.pop();
+                        toFind = neededSwaps.middle.shift();
+
+						if (toSwap === toFind) {
+							neededSwaps.middle.push(toFind);
+							toFind = neededSwaps.middle.shift();
+						}
+
                         steps.push([toSwap, 'left', toFind, 'middle']);
                         if (neededSwaps.left.length === 0 && neededSwaps.middle.length === 0 && neededSwaps.right.length == 1) {
                             neededSwaps.left.push(toFind);
@@ -421,7 +448,13 @@
                         outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
                         outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 1) {
-                        toFind = neededSwaps.right.pop();
+                        toFind = neededSwaps.right.shift();
+
+						if (toSwap === toFind) {
+							neededSwaps.right.push(toFind);
+							toFind = neededSwaps.right.shift();
+						}
+
                         steps.push([toSwap, 'left', toFind, 'right']);
                         outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
                         outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
@@ -431,9 +464,15 @@
                         break;
                     }
                 } else if (neededSwaps.middle.length) {
-                    toSwap = neededSwaps.middle.pop();
+                    toSwap = neededSwaps.middle.shift();
                     if (neededSwaps.right.length) {
-                        toFind = neededSwaps.right.pop();
+                        toFind = neededSwaps.right.shift();
+
+						if (toSwap === toFind) {
+							neededSwaps.right.push(toFind);
+							toFind = neededSwaps.right.shift();
+						}
+
                         steps.push([toSwap, 'middle', toFind, 'right']);
                         outMiddle = this.switchSymbolOnOutside(outMiddle, toSwap, toFind, 'Mitte');
                         outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
@@ -448,8 +487,14 @@
                     // but if any aisle needs two swaps both others need at least one to match
                     // so if we are here then either we are done (should have exited the loop) or all aisles need two swaps.
                     // break the tie, at which point the loop can converge.
-                    toSwap = neededSwaps.middle.pop();
-                    toFind = neededSwaps.right.pop();
+                    toSwap = neededSwaps.middle.shift();
+                    toFind = neededSwaps.right.shift();
+
+					if (toSwap === toFind) {
+						neededSwaps.right.push(toFind);
+						toFind = neededSwaps.right.shift();
+					}
+
                     steps.push([toSwap, 'middle', toFind, 'right']);
                     outRight = this.switchSymbolOnOutside(outRight, toSwap, toFind, 'Rechts');
                     outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
