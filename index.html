@@ -78,6 +78,11 @@
         Square: 'Cone',
         Triangle: 'Cylinder',
       },
+      solutionsC: {
+        Circle: 'Sphere',
+        Square: 'Cube',
+        Triangle: 'Pyramid',
+      },
       threeD: [
         {name: 'Cube', symbol1: 'Square', symbol2: 'Square', isPure: true, image: './images/cube.svg', raw: ''},
         {name: 'Sphere', symbol1: 'Circle', symbol2: 'Circle', isPure: true, image: './images/sphere.svg', raw: ''},
@@ -93,6 +98,11 @@
       outsideGuardianLeft: '',
       outsideGuardianMiddle: '',
       outsideGuardianRight: '',
+	  isChallenge: false,
+
+      toggleChallenge: function(){
+		this.isChallenge = this.isChallenge === true ? false : true;
+      },
 
       resetForm: function(){
         this.insideCallouts = '';
@@ -102,6 +112,7 @@
         this.outsideGuardianLeft = '';
         this.outsideGuardianMiddle = '';
         this.outsideGuardianRight = '';
+		this.isChallenge = false;
       },
 
       setInsideCallouts: function() {
@@ -124,7 +135,6 @@
       clickInsidePicture(guardian, imageUrlName){
             if(guardian === 'left'){
                 this.insideGuardianLeft = imageUrlName;
-                
             } 
             if(guardian === 'middle'){
                 this.insideGuardianMiddle = imageUrlName;
@@ -149,63 +159,126 @@
       neededThreeD: function() {
         let retVal = [];
         if(this.insideGuardianLeft && this.insideGuardianMiddle && this.insideGuardianRight) {
-          retVal = [
-            this.threeD.find(item => item.name === this.solutions[this.insideGuardianLeft]),
-            this.threeD.find(item => item.name === this.solutions[this.insideGuardianMiddle]),
-            this.threeD.find(item => item.name === this.solutions[this.insideGuardianRight]),
-          ]
+		  if (!this.isChallenge) {
+			  retVal = [
+				this.threeD.find(item => item.name === this.solutions[this.insideGuardianLeft]),
+				this.threeD.find(item => item.name === this.solutions[this.insideGuardianMiddle]),
+				this.threeD.find(item => item.name === this.solutions[this.insideGuardianRight]),
+			  ]
+		  }
+		  else {
+			  retVal = [
+				this.threeD.find(item => item.name === this.solutionsC[this.insideGuardianLeft]),
+				this.threeD.find(item => item.name === this.solutionsC[this.insideGuardianMiddle]),
+				this.threeD.find(item => item.name === this.solutionsC[this.insideGuardianRight]),
+			  ]
+		  }
         }
         return retVal;
       },
 
-      neededSwaps: function() {
+      swapsNeeded: function(outLeft, outMiddle, outRight) {
         let retVal = {};
 
-        guardianNeededSymbols = function(shapes, inside, outside) {
+        guardianNeededSymbols = function(shapes, inside, outside, challengeMode) {
           mustSend = [];
           const outsideObject = shapes.find(item => item.name === outside);
 
-          if (outsideObject.symbol1 === inside) {
-            mustSend.push(outsideObject.symbol1);
-          }
+		  if (challengeMode !== true) {
+			  if (outsideObject.symbol1 === inside) {
+				mustSend.push(outsideObject.symbol1);
+			  }
 
-          if (outsideObject.symbol2 === inside) {
-            mustSend.push(outsideObject.symbol2);
-          }
+			  if (outsideObject.symbol2 === inside) {
+				mustSend.push(outsideObject.symbol2);
+			  }
 
-          if (mustSend.length === 0 && outsideObject.symbol1 === outsideObject.symbol2) {
-            mustSend.push(outsideObject.symbol1);
-          }
+			  if (mustSend.length === 0 && outsideObject.symbol1 === outsideObject.symbol2) {
+				mustSend.push(outsideObject.symbol1);
+			  }
+		  }
+		  else {
+			  if (outsideObject.symbol1 !== inside) {
+				mustSend.push(outsideObject.symbol1);
+			  }
 
+			  if (outsideObject.symbol2 !== inside) {
+				mustSend.push(outsideObject.symbol2);
+			  }
+		  }
+
+		  // console.log(retVal);
           return mustSend;
         };
 
         if(this.insideGuardianLeft) {
           if(this.outsideGuardianLeft) {
-            retVal.left = guardianNeededSymbols(this.threeD, this.insideGuardianLeft, this.outsideGuardianLeft);
+            retVal.left = guardianNeededSymbols(this.threeD, this.insideGuardianLeft, outLeft, this.isChallenge);
           }
         }
         if(this.insideGuardianMiddle) {
           if(this.outsideGuardianMiddle) {
-            retVal.middle = guardianNeededSymbols(this.threeD, this.insideGuardianMiddle, this.outsideGuardianMiddle);
+            retVal.middle = guardianNeededSymbols(this.threeD, this.insideGuardianMiddle, outMiddle, this.isChallenge);
           }
         }
         if(this.insideGuardianRight) {
           if(this.outsideGuardianRight) {
-            retVal.right = guardianNeededSymbols(this.threeD, this.insideGuardianRight, this.outsideGuardianRight);
+            retVal.right = guardianNeededSymbols(this.threeD, this.insideGuardianRight, outRight, this.isChallenge);
           }
         }
+		
+		// console.log(retVal.left);
+		// console.log(retVal.middle);
+		// console.log(retVal.right);
         return retVal;
       },
       displayNeededSymbols: function(symbolText) {
         return symbolText.join(' <br/> ');
       },
+	  switchSymbolOnOutside: function(guardianToSwitch, symbolRemoved, symbolReceived, position) {
+		old3D = this.threeD.find(item => item.name === guardianToSwitch);
+		oldS1 = old3D.symbol1;
+		oldS2 = old3D.symbol2;
+		newS1 = '';
+		newS2 = '';
+		// console.log(position);
+		// console.log(old3D.name);
+		// console.log('Tausch: ' + symbolRemoved + ' <=> ' + symbolReceived);
+		
+		if (oldS1 === symbolRemoved) {
+			newS1 = symbolReceived;
+			newS2 = oldS2;
+		}
+		else if (oldS2 === symbolRemoved) {
+			newS2 = symbolReceived;
+			newS1 = oldS1;
+		}
+		
+		// console.log('suche nach: ' + newS1 + ', ' + newS2);
+		newSy1 = this.threeD.filter(item => ((item.symbol1 === newS1 && item.symbol2 === newS2) || (item.symbol1 === newS2 && item.symbol2 === newS1)));
+		newSy2 = newSy1[0];
+		
+		// console.log(newSy2.name);
+		return newSy2.name;
+	  },
+	  dnsteps: function() {
+		return this.displayNeededSteps(this.outsideGuardianLeft, this.outsideGuardianMiddle, this.outsideGuardianRight)
+	  },
       // This is garbage code but it works. Redo this to make it more elegant
-      displayNeededSteps: function(neededSwaps) {
+      displayNeededSteps: function(outLeft, outMiddle, outRight) {
+	    neededSwaps = this.swapsNeeded(outLeft, outMiddle, outRight);
+		zaehl = 0;
+		
         if(neededSwaps.left && neededSwaps.middle && neededSwaps.right) {
             steps = [];
 
             while (neededSwaps.left.length > 0 || neededSwaps.middle.length > 0 || neededSwaps.right.length > 0) {
+				zaehl++;
+				
+				if (zaehl == 20) {
+					break;
+					}
+					
                 if (neededSwaps.left.length) {
                     toSwap = neededSwaps.left.pop();
                     // knowing a shape to get away from a guardian, if anyone needs two swaps, this definitely has to go there.
@@ -215,9 +288,15 @@
                     if (neededSwaps.middle.length == 2) {
                         toFind = neededSwaps.middle.pop();
                         steps.push([toSwap, 'left', toFind, 'middle']);
+						// console.log('Left, Middle');
+						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+						outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 2) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'left', toFind, 'right']);
+						// console.log('Left, Right');
+						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else if (neededSwaps.middle.length == 1) {
                         // it's possible that we're handling 'all outside aisles must swap one' e.g. SCT/Cylinder+Cone+Prism
                         // we've popped left, pop middle and see if right needs one swap. if so, we'll actually need to swap the retrieved symbol again.
@@ -226,9 +305,15 @@
                         if (neededSwaps.left.length === 0 && neededSwaps.middle.length === 0 && neededSwaps.right.length == 1) {
                             neededSwaps.left.push(toFind);
                         }
+						// console.log('Left, Middle');
+						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+						outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 1) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'left', toFind, 'right']);
+						// console.log('Left, Right');
+						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else {
                         console.log('wanted to swap ' + toSwap + ' from left, but couldnt ??');
                         steps.push([undefined, undefined, undefined, undefined]);
@@ -239,6 +324,9 @@
                     if (neededSwaps.right.length) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'middle', toFind, 'right']);
+						// console.log('Middle, Right');
+						outMiddle = this.switchSymbolOnOutside(outMiddle, toSwap, toFind, 'Mitte');
+						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else {
                         console.log('wanted to swap ' + toSwap + ' from middle, couldnt put it at right?? left should have taken this otherwise??');
                         steps.push([undefined, undefined, undefined, undefined]);
@@ -253,7 +341,12 @@
                     toSwap = neededSwaps.middle.pop();
                     toFind = neededSwaps.right.pop();
                     steps.push([toSwap, 'middle', toFind, 'right']);
+					// console.log('Middle, Right');
+					outRight = this.switchSymbolOnOutside(outRight, toSwap, toFind, 'Rechts');
+					outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                 }
+				
+				neededSwaps = this.swapsNeeded(outLeft, outMiddle, outRight);
             }
 
             step_strings = [];
@@ -589,33 +682,35 @@
                     <div class="w-full flex flex-row">
                         <div class="flex flex-col w-1/3">
                             <span
-                                class="text-purple-800 font-bold"
                                 x-text="neededThreeD()[0]?.name"
                             >
                             </span>
                         </div>
                         <div class="flex flex-col gap-2 w-1/3">
                             <span
-                                class="text-purple-800 font-bold"
                                 x-text="neededThreeD()[1]?.name"
                             ></span>
                         </div>
                         <div class="flex flex-col gap-2 w-1/3">
                             <span
-                                class="text-purple-800 font-bold"
                                 x-text="neededThreeD()[2]?.name"
                             ></span>
                         </div>
                     </div>
                     <div class="font-bold text-lg">Steps</div>
                     <dtv>
-                        <span x-html="displayNeededSteps(neededSwaps())"></span>
+                        <span x-html="dnsteps()"></span>
                     </dtv>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2 mt-12 border-2 border-gray-300 rounded-md p-4 align-center text-center">
-                    <label class="whitespace-nowrap" for="guard1" x-on:click="resetForm()">Reset</label>
+            <div class="flex flex-col gap-2 mt-12 border-2 border-gray-300 rounded-md p-4 align-center text-center"
+				x-bind:class="isChallenge === true ? 'border-2 border-blue-800 p-1' : 'border-2 border-gray-300 p-1 border-dark'">
+                    <label class="whitespace-nowrap" x-on:click="toggleChallenge()">Challenge</label>
+            </div>
+            <div class="flex flex-col mt-12 border-2 border-gray-300 rounded-md p-4 align-center text-center"
+				x-bind:class="'border-2 border-gray-300 p-1 border-dark'">
+                    <label class="whitespace-nowrap" x-on:click="resetForm()">Reset</label>
             </div>
             <div
                 class="flex flex-col gap-2 mt-12 border-2 border-gray-300 rounded-md p-4 align-center text-center"
