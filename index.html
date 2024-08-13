@@ -70,18 +70,18 @@
       twoDWithImages: [
         {name: 'Circle', image: './images/circle.svg', raw: ''},
         {name: 'Square', image: './images/square.svg', raw: ''},
-        {name: 'Triangle', image: './images/triangle.svg', raw: ''},
+        {name: 'Triangle', image: './images/triangle.svg', raw: ''}
       ],
       // map of inside shapes to the corresponding outside shape that guardian must be holding to exit inside rooms
       solutions: {
         Circle: 'Prism',
         Square: 'Cone',
-        Triangle: 'Cylinder',
+        Triangle: 'Cylinder'
       },
       solutionsC: {
-        Circle: 'Sphere',
-        Square: 'Cube',
-        Triangle: 'Pyramid',
+        Circle: 'Pyramid',
+        Square: 'Sphere',
+        Triangle: 'Cube'
       },
       threeD: [
         {name: 'Cube', symbol1: 'Square', symbol2: 'Square', isPure: true, image: './images/cube.svg', raw: ''},
@@ -91,6 +91,11 @@
         {name: 'Cone', symbol1: 'Circle', symbol2: 'Triangle', isPure: false, image: './images/cone.svg', raw: ''},
         {name: 'Prism', symbol1: 'Triangle', symbol2: 'Square', isPure: false, image: './images/prism.svg', raw: ''},
       ],
+	  challengeMapping: [
+		{inside: 'Circle', outside: 'Pyramid'},
+		{inside: 'Triangle', outside: 'Cube'},
+		{inside: 'Square', outside: 'Sphere'}
+	  ],
       insideCallouts: '',
       insideGuardianLeft: '',
       insideGuardianMiddle: '',
@@ -180,7 +185,7 @@
       swapsNeeded: function(outLeft, outMiddle, outRight) {
         let retVal = {};
 
-        guardianNeededSymbols = function(shapes, inside, outside, challengeMode) {
+        guardianNeededSymbols = function(shapes, inside, outside, challengeMode, challengeM) {
           mustSend = [];
           const outsideObject = shapes.find(item => item.name === outside);
 
@@ -192,19 +197,22 @@
 			  if (outsideObject.symbol2 === inside) {
 				mustSend.push(outsideObject.symbol2);
 			  }
-
 			  if (mustSend.length === 0 && outsideObject.symbol1 === outsideObject.symbol2) {
 				mustSend.push(outsideObject.symbol1);
 			  }
 		  }
 		  else {
-			  if (outsideObject.symbol1 !== inside) {
+			  const wanted3D = challengeM.find(item => item.inside === inside);
+			  const w3d = shapes.find(item => item.name === wanted3D.outside);
+
+			  if ((outsideObject.symbol1 !== w3d.symbol1) && (outsideObject.symbol1 !== w3d.symbol2)) {
 				mustSend.push(outsideObject.symbol1);
 			  }
 
-			  if (outsideObject.symbol2 !== inside) {
+			  if ((outsideObject.symbol2 !== w3d.symbol1) && (outsideObject.symbol2 !== w3d.symbol2)) {
 				mustSend.push(outsideObject.symbol2);
 			  }
+
 		  }
 
 		  // console.log(retVal);
@@ -213,17 +221,17 @@
 
         if(this.insideGuardianLeft) {
           if(this.outsideGuardianLeft) {
-            retVal.left = guardianNeededSymbols(this.threeD, this.insideGuardianLeft, outLeft, this.isChallenge);
+            retVal.left = guardianNeededSymbols(this.threeD, this.insideGuardianLeft, outLeft, this.isChallenge, this.challengeMapping);
           }
         }
         if(this.insideGuardianMiddle) {
           if(this.outsideGuardianMiddle) {
-            retVal.middle = guardianNeededSymbols(this.threeD, this.insideGuardianMiddle, outMiddle, this.isChallenge);
+            retVal.middle = guardianNeededSymbols(this.threeD, this.insideGuardianMiddle, outMiddle, this.isChallenge, this.challengeMapping);
           }
         }
         if(this.insideGuardianRight) {
           if(this.outsideGuardianRight) {
-            retVal.right = guardianNeededSymbols(this.threeD, this.insideGuardianRight, outRight, this.isChallenge);
+            retVal.right = guardianNeededSymbols(this.threeD, this.insideGuardianRight, outRight, this.isChallenge, this.challengeMapping);
           }
         }
 		
@@ -253,16 +261,123 @@
 			newS2 = symbolReceived;
 			newS1 = oldS1;
 		}
-		
+
 		// console.log('suche nach: ' + newS1 + ', ' + newS2);
 		newSy1 = this.threeD.filter(item => ((item.symbol1 === newS1 && item.symbol2 === newS2) || (item.symbol1 === newS2 && item.symbol2 === newS1)));
 		newSy2 = newSy1[0];
-		
+
 		// console.log(newSy2.name);
 		return newSy2.name;
 	  },
+	  verifyCallouts: function() {
+		const threeDLeft = this.threeD.find(item => item.name === this.outsideGuardianLeft);
+		const threeDMiddle = this.threeD.find(item => item.name === this.outsideGuardianMiddle);
+		const threeDRight = this.threeD.find(item => item.name === this.outsideGuardianRight);
+
+		if (!threeDLeft || !threeDMiddle || !threeDRight) {
+			return true;
+		}
+
+		numbS = 0;
+		numbC = 0;
+		numbT = 0;
+
+		if (this.insideGuardianLeft === 'Square') {
+			numbS++;
+		}
+		if (this.insideGuardianLeft === 'Circle') {
+			numbC++;
+		}
+		if (this.insideGuardianLeft === 'Triangle') {
+			numbT++;
+		}
+		if (this.insideGuardianMiddle === 'Square') {
+			numbS++;
+		}
+		if (this.insideGuardianMiddle === 'Circle') {
+			numbC++;
+		}
+		if (this.insideGuardianMiddle === 'Triangle') {
+			numbT++;
+		}
+		if (this.insideGuardianRight === 'Square') {
+			numbS++;
+		}
+		if (this.insideGuardianRight === 'Circle') {
+			numbC++;
+		}
+		if (this.insideGuardianRight === 'Triangle') {
+			numbT++;
+		}
+
+		if (threeDLeft.symbol1 === 'Square') {
+			numbS++;
+		}
+		if (threeDLeft.symbol2 === 'Square') {
+			numbS++;
+		}
+		if (threeDMiddle.symbol1 === 'Square') {
+			numbS++;
+		}
+		if (threeDMiddle.symbol2 === 'Square') {
+			numbS++;
+		}
+		if (threeDRight.symbol1 === 'Square') {
+			numbS++;
+		}
+		if (threeDRight.symbol2 === 'Square') {
+			numbS++;
+		}
+
+		if (threeDLeft.symbol1 === 'Circle') {
+			numbC++;
+		}
+		if (threeDLeft.symbol2 === 'Circle') {
+			numbC++;
+		}
+		if (threeDMiddle.symbol1 === 'Circle') {
+			numbC++;
+		}
+		if (threeDMiddle.symbol2 === 'Circle') {
+			numbC++;
+		}
+		if (threeDRight.symbol1 === 'Circle') {
+			numbC++;
+		}
+		if (threeDRight.symbol2 === 'Circle') {
+			numbC++;
+		}
+
+		if (threeDLeft.symbol1 === 'Triangle') {
+			numbT++;
+		}
+		if (threeDLeft.symbol2 === 'Triangle') {
+			numbT++;
+		}
+		if (threeDMiddle.symbol1 === 'Triangle') {
+			numbT++;
+		}
+		if (threeDMiddle.symbol2 === 'Triangle') {
+			numbT++;
+		}
+		if (threeDRight.symbol1 === 'Triangle') {
+			numbT++;
+		}
+		if (threeDRight.symbol2 === 'Triangle') {
+			numbT++;
+		}
+
+		return ((numbS == 3) && (numbC == 3) && (numbT == 3));
+	  },
 	  dnsteps: function() {
-		return this.displayNeededSteps(this.outsideGuardianLeft, this.outsideGuardianMiddle, this.outsideGuardianRight)
+		verified = this.verifyCallouts();
+
+		if (verified) {
+			return this.displayNeededSteps(this.outsideGuardianLeft, this.outsideGuardianMiddle, this.outsideGuardianRight);
+		}
+		else {
+			return 'Unable to solve: inside or outside calls might be wrong';
+		}
 	  },
       // This is garbage code but it works. Redo this to make it more elegant
       displayNeededSteps: function(outLeft, outMiddle, outRight) {
@@ -288,15 +403,13 @@
                     if (neededSwaps.middle.length == 2) {
                         toFind = neededSwaps.middle.pop();
                         steps.push([toSwap, 'left', toFind, 'middle']);
-						// console.log('Left, Middle');
-						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
-						outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
+                        outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+                        outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 2) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'left', toFind, 'right']);
-						// console.log('Left, Right');
-						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
-						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
+                        outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+                        outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else if (neededSwaps.middle.length == 1) {
                         // it's possible that we're handling 'all outside aisles must swap one' e.g. SCT/Cylinder+Cone+Prism
                         // we've popped left, pop middle and see if right needs one swap. if so, we'll actually need to swap the retrieved symbol again.
@@ -305,15 +418,13 @@
                         if (neededSwaps.left.length === 0 && neededSwaps.middle.length === 0 && neededSwaps.right.length == 1) {
                             neededSwaps.left.push(toFind);
                         }
-						// console.log('Left, Middle');
-						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
-						outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
+                        outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+                        outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                     } else if (neededSwaps.right.length == 1) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'left', toFind, 'right']);
-						// console.log('Left, Right');
-						outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
-						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
+                        outLeft = this.switchSymbolOnOutside(outLeft, toSwap, toFind, 'Links');
+                        outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else {
                         console.log('wanted to swap ' + toSwap + ' from left, but couldnt ??');
                         steps.push([undefined, undefined, undefined, undefined]);
@@ -324,9 +435,8 @@
                     if (neededSwaps.right.length) {
                         toFind = neededSwaps.right.pop();
                         steps.push([toSwap, 'middle', toFind, 'right']);
-						// console.log('Middle, Right');
-						outMiddle = this.switchSymbolOnOutside(outMiddle, toSwap, toFind, 'Mitte');
-						outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
+                        outMiddle = this.switchSymbolOnOutside(outMiddle, toSwap, toFind, 'Mitte');
+                        outRight = this.switchSymbolOnOutside(outRight, toFind, toSwap, 'Rechts');
                     } else {
                         console.log('wanted to swap ' + toSwap + ' from middle, couldnt put it at right?? left should have taken this otherwise??');
                         steps.push([undefined, undefined, undefined, undefined]);
@@ -341,9 +451,8 @@
                     toSwap = neededSwaps.middle.pop();
                     toFind = neededSwaps.right.pop();
                     steps.push([toSwap, 'middle', toFind, 'right']);
-					// console.log('Middle, Right');
-					outRight = this.switchSymbolOnOutside(outRight, toSwap, toFind, 'Rechts');
-					outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
+                    outRight = this.switchSymbolOnOutside(outRight, toSwap, toFind, 'Rechts');
+                    outMiddle = this.switchSymbolOnOutside(outMiddle, toFind, toSwap, 'Mitte');
                 }
 				
 				neededSwaps = this.swapsNeeded(outLeft, outMiddle, outRight);
